@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>森林大冒险 · 本地预览</title>
+  <script src="./game/phaser.min.js"></script>
+  <style>
+    html,body{margin:0;height:100%;background:#1d2b18;display:flex;align-items:center;justify-content:center}
+    #parkour-canvas{width:375px;height:667px}
+  </style>
+</head>
+<body>
+  <div id="parkour-canvas"></div>
+  <script type="module">
+    import createParkourScene from '/pages/game/parkour/parkour-game.js';
+    const SceneClass = createParkourScene(window.Phaser, {
+      onReady: (scene) => {
+        window.__scene = scene;
+        setTimeout(() => scene.startRun(), 600);
+      },
+      onGameOver: (result) => {
+        document.title = 'GAMEOVER ' + result.score + 'pts ' + result.coins + 'coins ' + result.distance + 'm';
+        window.__over = result;
+        setTimeout(() => { window.__scene.revive(); setTimeout(() => window.__scene.gameOver(), 1500); }, 400);
+      }
+    });
+    const game = new Phaser.Game({
+      type: Phaser.AUTO,
+      parent: 'parkour-canvas',
+      width: 750,
+      height: 1334,
+      backgroundColor: '#d8f0c2',
+      scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+      scene: [SceneClass]
+    });
+    window.__game = game;
+  </script>
+</body>
+</html>

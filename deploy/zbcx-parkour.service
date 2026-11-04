@@ -1,0 +1,14 @@
+[Unit]
+Description=Parkour Game WebSocket Server (Go + cherry)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/www/wwwroot/parkour-server
+ExecStart=/www/wwwroot/parkour-server/parkour-server -profile etc/parkour.json -node parkour-1 -type parkour
+Restart=on-failure
+RestartSec=3
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
