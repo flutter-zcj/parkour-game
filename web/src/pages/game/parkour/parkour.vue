@@ -1,5 +1,6 @@
 <style lang="scss" scoped>
 .parkour-page{position:relative;width:100%;height:100vh;background:#d8f0c2;overflow:hidden;box-sizing:border-box}
+.parkour-page.rotate{position:fixed;top:0;left:100vw;width:100vh;height:100vw;transform:rotate(90deg);transform-origin:0 0;z-index:99}
 .parkour-canvas{position:absolute;inset:0}
 .parkour-tips{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:32rpx;color:#5b3a1e;background:rgba(253,243,221,.95);padding:24rpx 40rpx;border-radius:16rpx}
 .parkour-mask{position:absolute;inset:0;background:rgba(43,29,12,.55);display:flex;align-items:center;justify-content:center;z-index:30}
@@ -18,7 +19,7 @@
 .parkour-rankrow{position:relative;display:flex;justify-content:space-between;font-size:28rpx;color:#5b3a1e;padding:8rpx 0;border-bottom:1rpx dashed #d9c39a}
 </style>
 <template>
-  <view class="parkour-page">
+  <view class="parkour-page" :class="{ rotate: isPortrait }">
     <view id="parkour-canvas" class="parkour-canvas"></view>
     <view v-if="tips" class="parkour-tips">{{ tips }}</view>
     <view v-if="overlay === 'pause'" class="parkour-mask">
@@ -92,9 +93,14 @@
  * @data {Object}  audio       - 音频管理器
  * @data {Object}  game        - Phaser.Game 实例
  * @data {Object}  scene       - 当前场景实例
+ * @data {Boolean} isPortrait  - 设备是否处于竖屏（竖屏时页面旋转 90° 强制横屏显示）
+ * @data {Number}  fitTimer    - 等待 Phaser canvas 就绪的轮询定时器 ID
  *
  * 事件说明：
  * @event boot            - 初始化 Phaser 与网络
+ * @event disablePcAdapt  - 解除 PC 适配模拟器，保证游戏全屏直跑
+ * @event updateOrientation - 检测横竖屏并切换旋转兜底
+ * @event lockLandscape   - 尝试全屏 + 原生横屏锁定
  * @event connect         - 建立 WebSocket 并注册指令处理
  * @event resolveUrl      - 计算 WebSocket 地址
  * @event bindSceneActions- 注入音频回调
@@ -113,11 +119,12 @@
  *
  * 插槽说明：无
  *
- * 修改时间：2026/11/04
+ * 修改时间：2026/11/05（横屏模式：CSS 旋转兜底 + 原生方向锁定）
  */
 import ParkourNet from './parkour-net.js';
 import ParkourAudio from './parkour-audio.js';
 import createParkourScene from './parkour-game.js';
+import { DESIGN_W, DESIGN_H } from './parkour-theme.js';
 
 export default {
   data() {
@@ -131,6 +138,8 @@ export default {
       rank: { top: [], my_rank: 0, my_score: 0 },
       reviving: false,
       drawing: false,
+      isPortrait: false,
+      fitTimer: null,
       net: null,
       audio: null,
       game: null,
@@ -139,15 +148,90 @@ export default {
   },
 
   mounted() {
+    this.disablePcAdapt();
     this.audio = new ParkourAudio();
+    this.updateOrientation();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', this.updateOrientation);
+      window.addEventListener('orientationchange', this.updateOrientation);
+    }
     this.boot();
   },
 
   beforeUnmount() {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('resize', this.updateOrientation);
+      window.removeEventListener('orientationchange', this.updateOrientation);
+    }
     this.shutdown();
   },
 
   methods: {
+    /**
+     * 解除模板的 PC 适配（宽屏时 adapt-pc 会把应用藏进 iframe 手机模拟器，
+     * 横屏游戏页必须全屏直跑，故移除适配标记并隐藏模拟器容器）
+     * @returns {void}
+     */
+    disablePcAdapt() {
+      try {
+        const doc = (window.top || window).document;
+        if (doc.body.hasAttribute('adapt')) {
+          doc.body.removeAttribute('adapt');
+          const sim = doc.querySelector('uni-adapt-pc');
+          if (sim) {
+            sim.style.display = 'none';
+          }
+        }
+      } catch (e) {
+        // 跨域等异常时忽略
+      }
+    },
+
+    /**
+     * 检测横竖屏：竖屏时通过 CSS 旋转强制横屏显示
+     * @returns {void}
+     */
+    updateOrientation() {
+      if (typeof window === 'undefined') {
+        return;
+      }
+      this.isPortrait = window.innerHeight > window.innerWidth;
+      // 等 rotate 类渲染生效后再重算画布缩放
+      this.$nextTick(() => {
+        window.requestAnimationFrame(() => this.fitCanvas());
+      });
+    },
+
+    /**
+     * 尝试原生横屏锁定（需全屏授权，失败则静默降级为 CSS 旋转）
+     * @returns {void}
+     */
+    lockLandscape() {
+      try {
+        const el = document.documentElement;
+        const tryLock = () => {
+          const orientation = window.screen.orientation;
+          if (orientation && orientation.lock) {
+            const locked = orientation.lock('landscape');
+            if (locked && locked.catch) {
+              locked.catch(() => {});
+            }
+          }
+        };
+        if (el.requestFullscreen) {
+          const full = el.requestFullscreen();
+          if (full && full.then) {
+            full.then(tryLock).catch(() => tryLock());
+          } else {
+            tryLock();
+          }
+        } else {
+          tryLock();
+        }
+      } catch (e) {
+        // 全屏或方向锁定不可用时忽略，CSS 旋转兜底
+      }
+    },
     /**
      * 初始化 Phaser 与网络
      * @returns {void}
@@ -170,17 +254,50 @@ export default {
         this.game = new Phaser.Game({
           type: Phaser.AUTO,
           parent: 'parkour-canvas',
-          width: 750,
-          height: 1334,
+          width: DESIGN_W,
+          height: DESIGN_H,
           backgroundColor: '#d8f0c2',
-          scale: {
-            mode: Phaser.Scale.FIT,
-            autoCenter: Phaser.Scale.CENTER_BOTH
-          },
+          // 竖屏时父容器带 rotate 变换，FIT 量到的 bbox 与布局不符，
+          // 改为手动按 offsetWidth/offsetHeight 计算缩放（见 fitCanvas）
+          scale: { mode: Phaser.Scale.NONE },
           scene: [SceneClass]
+        });
+        this.$nextTick(() => {
+          // Phaser.Game 异步 boot，canvas 就绪前先轮询，就绪后立即适配一次
+          this.fitTimer = setInterval(() => {
+            if (this.game && this.game.canvas) {
+              this.fitCanvas();
+              clearInterval(this.fitTimer);
+              this.fitTimer = null;
+            }
+          }, 100);
         });
         this.connect();
       });
+    },
+
+    /**
+     * 按画布容器布局尺寸缩放并居中游戏画布（横竖屏通用）
+     * @returns {void}
+     */
+    fitCanvas() {
+      const wrap = typeof document !== 'undefined' ? document.getElementById('parkour-canvas') : null;
+      if (!wrap || !this.game || !this.game.canvas) {
+        return;
+      }
+      const w = wrap.offsetWidth;
+      const h = wrap.offsetHeight;
+      if (!w || !h) {
+        return;
+      }
+      const ratio = Math.min(w / DESIGN_W, h / DESIGN_H);
+      const cw = Math.floor(DESIGN_W * ratio);
+      const ch = Math.floor(DESIGN_H * ratio);
+      const c = this.game.canvas;
+      c.style.width = cw + 'px';
+      c.style.height = ch + 'px';
+      c.style.marginLeft = Math.floor((w - cw) / 2) + 'px';
+      c.style.marginTop = Math.floor((h - ch) / 2) + 'px';
     },
 
     /**
@@ -265,6 +382,7 @@ export default {
      */
     startGame() {
       this.overlay = '';
+      this.lockLandscape();
       this.audio.play('click');
       this.audio.playBgm('bgm_run');
       this.audio.playAmbience(true);
@@ -392,6 +510,10 @@ export default {
      * @returns {void}
      */
     shutdown() {
+      if (this.fitTimer) {
+        clearInterval(this.fitTimer);
+        this.fitTimer = null;
+      }
       if (this.net) {
         this.net.stopPing();
         if (this.net.ws) {

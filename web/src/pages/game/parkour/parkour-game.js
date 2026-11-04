@@ -232,19 +232,19 @@ export default function createParkourScene(Phaser, callbacks) {
     buildBackground() {
       this.add.rectangle(0, 0, DESIGN_W, DESIGN_H, C.skyTop).setOrigin(0);
       this.add.rectangle(0, DESIGN_H * 0.35, DESIGN_W, DESIGN_H * 0.65, C.skyBottom).setOrigin(0);
-      // 远山
+      // 远山（横屏：山体压在 GROUND_Y 地平线上方）
       const g = this.add.graphics();
       g.fillStyle(C.hillFar, 1);
-      for (let i = 0; i < 4; i++) {
-        g.fillCircle(90 + i * 210, 700, 130);
+      for (let i = 0; i < 6; i++) {
+        g.fillCircle(90 + i * 230, 470, 130);
       }
-      g.generateTexture('hill_far', DESIGN_W, 840);
+      g.generateTexture('hill_far', DESIGN_W, 580);
       g.clear();
       g.fillStyle(C.hillNear, 1);
-      for (let i = 0; i < 5; i++) {
-        g.fillCircle(60 + i * 170, 760, 110);
+      for (let i = 0; i < 7; i++) {
+        g.fillCircle(60 + i * 190, 520, 110);
       }
-      g.generateTexture('hill_near', DESIGN_W, 880);
+      g.generateTexture('hill_near', DESIGN_W, 620);
       g.destroy();
       this.hillFar = this.add.image(0, 0, 'hill_far').setOrigin(0);
       this.hillNear = this.add.image(0, 0, 'hill_near').setOrigin(0);

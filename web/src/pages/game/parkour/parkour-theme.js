@@ -4,15 +4,15 @@
  * 所有 UI 与场景绘制统一从这里取色，保证美术风格一致。
  */
 
-/** 设计分辨率，与 ddz 一致 */
-export const DESIGN_W = 750;
-export const DESIGN_H = 1334;
+/** 设计分辨率（横屏），与原作横屏比例一致 */
+export const DESIGN_W = 1334;
+export const DESIGN_H = 750;
 
-/** 三条车道的 x 坐标（等分） */
-export const LANES = [190, 375, 560];
+/** 三条车道的 x 坐标（横屏等分） */
+export const LANES = [320, 667, 1014];
 
 /** 玩家脚底基准线 y */
-export const GROUND_Y = 1010;
+export const GROUND_Y = 560;
 
 /** 场景滚动速度（像素/秒），开局与上限 */
 export const SPEED_START = 340;

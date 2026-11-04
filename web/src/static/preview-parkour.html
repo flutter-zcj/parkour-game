@@ -7,7 +7,7 @@
   <script src="./game/phaser.min.js"></script>
   <style>
     html,body{margin:0;height:100%;background:#1d2b18;display:flex;align-items:center;justify-content:center}
-    #parkour-canvas{width:375px;height:667px}
+    #parkour-canvas{width:667px;height:375px}
   </style>
 </head>
 <body>
@@ -28,8 +28,8 @@
     const game = new Phaser.Game({
       type: Phaser.AUTO,
       parent: 'parkour-canvas',
-      width: 750,
-      height: 1334,
+      width: 1334,
+      height: 750,
       backgroundColor: '#d8f0c2',
       scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
       scene: [SceneClass]
