@@ -182,7 +182,7 @@
  *
  * 插槽说明：无
  *
- * 修改时间：2026/11/05（基于 3DMoonRunner 源码重做 UI 与伪 3D 场景）
+ * 修改时间：2026/11/07（接入源码原版音效与夜景 BGM、Pattern 化关卡节奏与反馈特效）
  */
 import ParkourNet from './parkour-net.js';
 import ParkourAudio from './parkour-audio.js';
@@ -454,7 +454,7 @@ export default {
         slide: () => this.audio.play('slide'),
         lane: () => this.audio.play('lane', 0.6),
         coin: () => this.audio.play('coin', 0.7),
-        item: () => this.audio.play('reward'),
+        item: () => this.audio.play('item'),
         crash: () => this.audio.play('crash'),
         death: () => this.audio.play('death'),
         revive: () => this.audio.play('revive'),

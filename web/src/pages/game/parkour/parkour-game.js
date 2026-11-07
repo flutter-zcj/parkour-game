@@ -5,6 +5,9 @@
  *       HUD 全部使用源码 Assets/GUI 原版 PNG（金币、分数条、木板道具按钮、暂停、音效）。
  * 玩法：第三人称伪 3D 三车道、手势/键盘换道、二段跳、滑铲、速度递增、
  *       磁铁/弹跳鞋/双倍金币/星星冲刺、金币连击、相机抖动（对齐源码 Script）。
+ * 关卡：按源码 PatternManager 以预设 Pattern 成组生成「障碍 + 金币引导线」，
+ *       含新手引导、单侧封锁、连跳、滑铲、断桥、Z 字换道等 12 组节奏；
+ *       金币飞入 HUD、连击浮字、落地扬尘、冲刺残影与放射速度线为打击反馈。
  */
 import {
   DESIGN_W, DESIGN_H, PERSP, LANES, SPEED_START, SPEED_MAX, SPEED_STEP,
@@ -17,6 +20,79 @@ const DEFAULT_BASE = 'static/game/parkour/moon/';
 const UI_MAP = {
   magnet: 'b-itemmagnet', shoe: 'b-itemshoe', star: 'b-itemstar', x2: 'b-itemx2'
 };
+
+/**
+ * 生成一串同车道金币（对齐源码金币成串摆放）
+ * @param {number} lane 车道索引 0/1/2
+ * @param {number} n 金币数量
+ * @param {number} dz0 起始深度偏移
+ * @param {number} step 相邻间距
+ * @returns {Array} 单元数组
+ */
+function coinLine(lane, n, dz0 = 0, step = 96) {
+  const cells = [];
+  for (let i = 0; i < n; i++) {
+    cells.push({ t: 'coin', lane, dz: dz0 + i * step });
+  }
+  return cells;
+}
+
+/**
+ * 构造障碍单元
+ * @param {string} type 障碍类型
+ * @param {number} lane 车道索引
+ * @param {number} dz 深度偏移
+ * @returns {Object} 单元
+ */
+function obs(type, lane, dz = 0) {
+  return { t: 'obs', type, lane, dz };
+}
+
+/**
+ * 构造道具单元
+ * @param {number} lane 车道索引
+ * @param {number} dz 深度偏移
+ * @returns {Object} 单元
+ */
+function item(lane, dz = 0) {
+  return { t: 'item', lane, dz };
+}
+
+/**
+ * 源码 PatternManager.Pattern 概念：预设的「障碍 + 金币引导线」组合。
+ * gap 为下一组生成的滚动距离；cells 中 dz 越大表示越晚到达玩家。
+ * 硬性约束：每组至少留一条可通行车道，且相邻单元间距保证玩家有反应时间。
+ */
+const PATTERNS = [
+  // —— 新手引导：先吃币、再遇单个可跳障碍 ——
+  { id: 'intro', gap: 720, cells: [...coinLine(1, 6)] },
+  { id: 'first_obs', gap: 780, cells: [obs('car', 1, 0), ...coinLine(0, 4, 140)] },
+  // —— 常规节奏 ——
+  { id: 'coin_wave', gap: 1220, cells: [
+    ...coinLine(0, 3), ...coinLine(1, 3, 290), ...coinLine(2, 3, 580)
+  ] },
+  { id: 'wall_left', gap: 840, cells: [
+    obs('bus', 0, 0), obs('bus', 1, 0), ...coinLine(2, 5)
+  ] },
+  { id: 'wall_right', gap: 840, cells: [
+    obs('bus', 1, 0), obs('bus', 2, 0), ...coinLine(0, 5)
+  ] },
+  { id: 'slide', gap: 840, cells: [obs('board', 1, 0), ...coinLine(1, 3, 260)] },
+  { id: 'gap', gap: 860, cells: [obs('gap', 1, 0), ...coinLine(1, 4, 260)] },
+  { id: 'jump2', gap: 960, cells: [
+    obs('car', 1, 0), obs('stone', 1, 320), ...coinLine(0, 4, 140)
+  ] },
+  { id: 'item_run', gap: 940, cells: [item(1, 0), ...coinLine(1, 6, 160)] },
+  { id: 'zigzag', gap: 1280, cells: [
+    obs('car', 0, 0), obs('stone', 2, 320), obs('car', 1, 640), ...coinLine(1, 3, 740)
+  ] },
+  { id: 'shoe_triple', gap: 1160, cells: [
+    obs('car', 1, 0), obs('car', 1, 280), obs('stone', 1, 560), ...coinLine(0, 3, 720)
+  ] },
+  { id: 'mixed', gap: 1320, cells: [
+    obs('bus', 2, 0), ...coinLine(0, 3), obs('board', 0, 620), ...coinLine(2, 3, 760)
+  ] }
+];
 
 /**
  * 创建跑酷场景类
@@ -53,6 +129,9 @@ export default function createParkourScene(Phaser, callbacks) {
       this.scrollZ = 0;
       this.nextSpawnAt = 1400;
       this.milestone = 250;
+      this.patternCount = 0;
+      this.lastPatternId = '';
+      this.lastTrailAt = 0;
       this.invincibleUntil = 0;
       this.player = null;
       this.hud = {};
@@ -538,12 +617,15 @@ export default function createParkourScene(Phaser, callbacks) {
         l.pole.setAlpha(Phaser.Math.Clamp(s * 1.2, 0.3, 1));
       });
 
-      // 星星冲刺速度线
+      // 星星冲刺：从地平线中心向外发散的速度线
       if (this.items.star && this.state === STATE.RUNNING) {
-        g.lineStyle(3, 0xfff2c0, 0.5);
-        for (let i = 0; i < 12; i++) {
-          const x = (i * 137 + Math.floor(this.scrollZ / 3)) % DESIGN_W;
-          g.lineBetween(x, PERSP.horizonY + 40, x + 40, PERSP.baseY);
+        const cx = DESIGN_W / 2;
+        for (let i = 0; i < 18; i++) {
+          const spread = ((i * 197 + Math.floor(this.scrollZ / 2)) % DESIGN_W) - DESIGN_W / 2;
+          const strong = i % 3 === 0;
+          g.lineStyle(strong ? 4 : 2, 0xfff2c0, strong ? 0.55 : 0.3);
+          g.lineBetween(cx + spread * 0.18, PERSP.horizonY + 30,
+            cx + spread * 1.25, PERSP.baseY + 60);
         }
       }
     }
@@ -810,36 +892,44 @@ export default function createParkourScene(Phaser, callbacks) {
     /** ============ 实体 ============ */
 
     /**
-     * 按节奏生成障碍/金币/道具（对齐源码 PatternManager）
+     * 选取本组 Pattern：前两组固定为新手引导，之后按距离解锁难度并避免连续重复
+     * @returns {Object} Pattern
+     */
+    pickPattern() {
+      if (this.patternCount < 2) {
+        return PATTERNS[this.patternCount];
+      }
+      const pool = this.distance < 300 ? PATTERNS.slice(0, 4) : PATTERNS;
+      let pat = Phaser.Utils.Array.GetRandom(pool);
+      let guard = 0;
+      while (pat.id === this.lastPatternId && guard < 4) {
+        pat = Phaser.Utils.Array.GetRandom(pool);
+        guard += 1;
+      }
+      this.lastPatternId = pat.id;
+      return pat;
+    }
+
+    /**
+     * 按预设 Pattern 成组生成障碍/金币/道具（对齐源码 PatternManager）
      * @returns {void}
      */
     spawn() {
       while (this.scrollZ >= this.nextSpawnAt) {
+        const pat = this.pickPattern();
         const z = PERSP.zFar;
-        const roll = Math.random();
-        if (roll < 0.44) {
-          const lanes = Phaser.Utils.Array.Shuffle([0, 1, 2]).slice(0, Math.random() < 0.72 ? 1 : 2);
-          lanes.forEach((ln) => {
-            const kinds = [OBS.BUS, OBS.CAR, OBS.STONE, OBS.BOARD, OBS.GAP];
-            this.addObstacle(Phaser.Utils.Array.GetRandom(kinds), LANES[ln], z);
-          });
-        } else if (roll < 0.79) {
-          const ln = Phaser.Math.Between(0, 2);
-          const n = Phaser.Math.Between(4, 7);
-          for (let i = 0; i < n; i++) {
-            this.addPickup('coin', LANES[ln], z + i * 96);
+        pat.cells.forEach((c) => {
+          const laneX = LANES[c.lane];
+          if (c.t === 'obs') {
+            this.addObstacle(c.type, laneX, z + c.dz);
+          } else if (c.t === 'item') {
+            this.addItemPickup(laneX, z + c.dz);
+          } else {
+            this.addPickup('coin', laneX, z + c.dz);
           }
-          if (Math.random() < 0.38) {
-            this.addItemPickup(LANES[(ln + 1) % 3], z + 220);
-          }
-        } else {
-          this.addItemPickup(LANES[Phaser.Math.Between(0, 2)], z);
-          const ln = Phaser.Math.Between(0, 2);
-          for (let i = 0; i < 3; i++) {
-            this.addPickup('coin', LANES[ln], z + 180 + i * 96);
-          }
-        }
-        this.nextSpawnAt += 430 + Math.random() * 280;
+        });
+        this.nextSpawnAt += pat.gap;
+        this.patternCount += 1;
       }
     }
 
@@ -1003,6 +1093,11 @@ export default function createParkourScene(Phaser, callbacks) {
           this.bonusScore += 50;
         }
         this.spawnBurst(p.img.x, p.img.y, 0xffd34d);
+        this.flyCoin(p.img.x, p.img.y, mult);
+        this.floatText(this.player.x, this.player.y - 130, '+' + mult, '#ffd34d', 30);
+        if (this.combo >= 3) {
+          this.floatText(this.player.x + 96, this.player.y - 172, '×' + this.combo, '#ffe6a8', 25);
+        }
         this.handlers.coin && this.handlers.coin();
       } else {
         this.inventory[p.itemKey] += 1;
@@ -1011,6 +1106,7 @@ export default function createParkourScene(Phaser, callbacks) {
         } else {
           this.showToast('获得 ' + ITEM_NAMES[p.itemKey]);
         }
+        this.floatText(p.img.x, p.img.y - 40, ITEM_NAMES[p.itemKey], '#ffe6a8', 26);
         this.handlers.item && this.handlers.item();
       }
     }
@@ -1083,6 +1179,75 @@ export default function createParkourScene(Phaser, callbacks) {
       }
     }
 
+    /**
+     * 金币飞向左上 HUD 的收集动画（对齐源码 Item.hitEffect）
+     * @param {number} x 起点 x
+     * @param {number} y 起点 y
+     * @param {number} mult 金币倍率
+     * @returns {void}
+     */
+    flyCoin(x, y, mult) {
+      const icon = this.add.image(x, y, 'fx_coin').setDisplaySize(46, 46).setDepth(49);
+      this.tweens.add({
+        targets: icon, x: 53, y: 49, scale: 0.34, alpha: 0.25,
+        duration: 420, ease: 'Cubic.In', onComplete: () => icon.destroy()
+      });
+      if (mult > 1) {
+        this.floatText(x, y - 36, '×2', '#ffe6a8', 26);
+      }
+    }
+
+    /**
+     * 场景内浮动文字（上浮淡出）
+     * @param {number} x x
+     * @param {number} y y
+     * @param {string} msg 文案
+     * @param {string} color 颜色
+     * @param {number} size 字号
+     * @returns {void}
+     */
+    floatText(x, y, msg, color, size) {
+      const t = this.add.text(x, y, msg, {
+        fontFamily: 'Arial, sans-serif', fontStyle: 'bold',
+        fontSize: size + 'px', color, stroke: '#1a1424', strokeThickness: 5
+      }).setOrigin(0.5).setDepth(49);
+      this.tweens.add({
+        targets: t, y: y - 70, alpha: 0, scale: 1.25,
+        duration: 640, ease: 'Cubic.Out', onComplete: () => t.destroy()
+      });
+    }
+
+    /**
+     * 落地扬尘
+     * @param {number} x x
+     * @param {number} y y
+     * @returns {void}
+     */
+    spawnDust(x, y) {
+      for (let i = 0; i < 5; i++) {
+        const d = this.add.ellipse(x + Phaser.Math.Between(-26, 26), y,
+          Phaser.Math.Between(14, 26), 9, 0xb9c2da, 0.5).setDepth(9);
+        this.tweens.add({
+          targets: d, x: d.x + Phaser.Math.Between(-40, 40), y: y - 18,
+          alpha: 0, scale: 0.4, duration: 380, onComplete: () => d.destroy()
+        });
+      }
+    }
+
+    /**
+     * 星星冲刺残影（对齐源码 QuickMove 的 20 速冲刺表现）
+     * @returns {void}
+     */
+    spawnTrail() {
+      const ghost = this.add.image(this.player.x, this.player.y, this.player.texture.key)
+        .setDisplaySize(this.player.displayWidth, this.player.displayHeight)
+        .setDepth(this.player.depth - 1).setAlpha(0.32);
+      this.tweens.add({
+        targets: ghost, alpha: 0, scaleX: 0.85,
+        duration: 260, onComplete: () => ghost.destroy()
+      });
+    }
+
     /** ============ 生命周期 ============ */
 
     /**
@@ -1113,6 +1278,9 @@ export default function createParkourScene(Phaser, callbacks) {
       this.picks = [];
       this.scrollZ = 0;
       this.nextSpawnAt = 1400;
+      this.patternCount = 0;
+      this.lastPatternId = '';
+      this.lastTrailAt = 0;
       this.setPose(POSE.RUN);
       this.player.setPosition(DESIGN_W / 2, PERSP.baseY);
       this.player.setAngle(0).setAlpha(1);
@@ -1216,7 +1384,8 @@ export default function createParkourScene(Phaser, callbacks) {
         return;
       }
       this.speed = Math.min(SPEED_MAX, this.speed + SPEED_STEP * dt);
-      const dy = this.speed * (this.items.star ? 1.75 : 1) * dt;
+      // 星星冲刺：对齐源码 QuickMove，直接拉到最大速度
+      const dy = (this.items.star ? SPEED_MAX : this.speed) * dt;
       this.distance += dy / 10;
       this.score = Math.floor(this.distance) + this.bonusScore;
       if (this.distance >= this.milestone) {
@@ -1243,11 +1412,13 @@ export default function createParkourScene(Phaser, callbacks) {
     updatePlayerPhysics(dt) {
       if (this.jumpV !== 0 || this.jumpY > 0) {
         this.jumpY += this.jumpV * dt;
-        this.jumpV += GRAVITY * dt;
+        // jumpV 为正表示上升，重力持续向下减速（源码 moveDirection.y -= gravity * deltaTime）
+        this.jumpV -= GRAVITY * dt;
         if (this.jumpY <= 0) {
           this.jumpY = 0;
           this.jumpV = 0;
           this.doubleJump = false;
+          this.spawnDust(this.player.x, PERSP.baseY - 4);
           if (this.pose === POSE.JUMP) {
             this.setPose(POSE.RUN);
           }
@@ -1275,6 +1446,12 @@ export default function createParkourScene(Phaser, callbacks) {
       const bob = this.state === STATE.RUNNING && this.jumpY <= 0 && this.pose === POSE.RUN
         ? Math.abs(Math.sin(this.time.now / 90)) * 5 : 0;
       this.player.y = PERSP.baseY - this.jumpY - bob;
+      // 星星冲刺：节流生成残影，强化速度感
+      if (this.state === STATE.RUNNING && this.items.star &&
+          this.time.now - this.lastTrailAt > 55) {
+        this.lastTrailAt = this.time.now;
+        this.spawnTrail();
+      }
       this.playerShadow.setPosition(this.player.x, PERSP.baseY + 4)
         .setScale(Phaser.Math.Clamp(1 - this.jumpY / 500, 0.45, 1), 1)
         .setAlpha(Phaser.Math.Clamp(0.34 - this.jumpY / 1200, 0.08, 0.34));

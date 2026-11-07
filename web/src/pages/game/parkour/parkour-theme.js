@@ -32,8 +32,8 @@ export const SPEED_STEP = 26;
 export const SPEED_ADD_DISTANCE = 300;
 export const SPEED_ADD_RATE = 46;
 
-/** 跳跃与滑铲 */
-export const JUMP_V = 900;
+/** 跳跃与滑铲：jumpV 正为上升，GRAVITY 为向下加速度（跳高 ≈ JUMP_V²/(2·GRAVITY) ≈ 300px） */
+export const JUMP_V = 1150;
 export const GRAVITY = 2200;
 export const SLIDE_MS = 620;
 
@@ -42,7 +42,7 @@ export const ITEM_DUR = {
   magnet: 15000,
   shoe: 10000,
   x2: 10000,
-  star: 3200
+  star: 3000
 };
 
 /** 道具键与源码素材对应 */

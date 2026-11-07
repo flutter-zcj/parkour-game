@@ -14,10 +14,25 @@
   <div id="parkour-canvas"></div>
   <script type="module">
     import createParkourScene from '/pages/game/parkour/parkour-game.js';
+    import ParkourAudio from '/pages/game/parkour/parkour-audio.js';
+    const audio = new ParkourAudio('/static/game/parkour/moon/audio/');
+    window.__audio = audio;
     const SceneClass = createParkourScene(window.Phaser, {
       assetBase: '/static/game/parkour/moon/',
       onReady: (scene) => {
         window.__scene = scene;
+        scene.setActions({
+          click: () => audio.play('click'),
+          jump: () => audio.play('jump'),
+          slide: () => audio.play('slide'),
+          lane: () => audio.play('lane', 0.6),
+          coin: () => audio.play('coin', 0.7),
+          item: () => audio.play('item'),
+          crash: () => audio.play('crash'),
+          death: () => audio.play('death'),
+          levelup: () => audio.play('levelup')
+        });
+        audio.playBgm('bgm_run');
         setTimeout(() => scene.startRun(), 800);
       },
       onGameOver: (result) => {

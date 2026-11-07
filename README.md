@@ -49,14 +49,17 @@ cd web && npm install && npm run build:h5   # 产物 dist/build/h5
 
 服务器上已有 ddz / guandan / mahjong 三个 cherry 前辈实例，本服务按同规范落位，端口顺延至 9108。
 
-## 素材来源（基于 3DMoonRunner 重做，2026/11/05）
+## 素材来源（基于 3DMoonRunner 重做，2026/11/07）
 
 参考源码：[XINCGer/3DMoonRunner](https://github.com/XINCGer/3DMoonRunner)（Unity「月光跑酷3D版」），仅用于学习研究，**禁止商用**。
 
 - **UI（严格参考）**：直接复用源码 `Assets/GUI` 的 13 张原版 PNG —— 破旧木板质感 PLAY / RESUME / RESTART / EXIT / PAUSE 按钮、4 个霓虹道具按钮、金色 B 币、深灰分数条、音效开关；派生 `b-blank.png` 承载中文按钮。布局对齐 `Previews/` 与 `logo.png`：左上金币条、右上竖排 4 道具、左下暂停、右下音效。
 - **场景**：星空天空盒 `SKYBOX_StarryNight/07/Front.bmp`、石板路 `Model/Floor/Texture/Road.jpg`、夜景建筑 `Model/Building/Texture/*.jpg`（亮度增强）用于伪 3D 透视街道；角色（白发 + 棕外套 + 黄围巾）与公交车/汽车/石墩/木板/断桥为程序化绘制，配色对齐源码贴图与预览图。
-- **音效**：`Assets/Audio` 的 button / coin / getitem / hit / slide 转 ogg 覆盖 click / coin / reward / crash / slide；BGM 沿用既有 bgm_menu / bgm_run。
+- **音效（严格参考）**：`Assets/Audio` 的 button / coin / getitem / hit / slide 统一转 ogg，按源码 `AudioManager` 的 5 个播放入口建立语义别名（所有按钮→button、金币→coin、拾取道具→getitem、撞击→hit、四方向手势→slide），旧版 22 条森林音效已全部移除。**BGM** 为程序化合成的 16 秒无缝循环夜景曲目（`bgm_menu` 静谧 pad / `bgm_run` 带轻鼓点推进）+ 8 秒夜风环境音，与月光夜景一致，不含任何原作音乐。
 - **玩法机制对齐源码 `Assets/Script`**：第三人称三车道、手势换道、二段跳、滑铲、每 300m 递增速度、磁铁 15s / 弹跳鞋 10s / ×2 金币 10s / 星星冲刺 3s、金币连击、撞击相机抖动、PlayUI / ResumeUI / RestartUI 左侧滑入面板。
+- **关卡节奏对齐 `PatternManager`**：12 组预设 Pattern 成组生成「障碍 + 金币引导线」（新手引导 / 单侧封锁 / 连跳 / 滑铲 / 断桥 / Z 字换道 / 道具跑道等），前两组固定引导、之后按距离解锁难度并避免连续重复；每组至少留一条可通行车道。
+- **打击反馈**：金币飞入 HUD、连击浮字、落地扬尘、星星冲刺残影与放射速度线；跳跃物理修正为标准抛物线（`jumpV -= gravity·dt`，跳高约 300px）。
+- **音频再生成**：`python3 web/scripts/prepare_moon_audio.py <3DMoonRunner/Assets/Audio>`（需 ffmpeg + numpy），输出 `web/src/static/game/parkour/moon/audio/`。
 
 ## 目录
 
