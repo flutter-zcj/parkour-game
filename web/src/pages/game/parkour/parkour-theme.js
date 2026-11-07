@@ -1,61 +1,86 @@
 /**
- * @file 跑酷主题常量。
- * 配色取自原作「圆润森林风」：木框 + 藤蔓绿 + 金色描边 + 暖色地面，
- * 所有 UI 与场景绘制统一从这里取色，保证美术风格一致。
+ * @file 月光跑酷主题常量。
+ * UI 与美术风格严格参考 3DMoonRunner 源码（Assets/GUI、Previews、Model/Texture）：
+ * 深蓝星空 + 紫灰夜景建筑 + 石板路 + 暖黄窗光 + 破旧木板按钮 + 金色 B 币。
+ * 场景采用伪 3D 透视投影（第三人称背面视角，与源码一致）。
  */
 
-/** 设计分辨率（横屏），与原作横屏比例一致 */
+/** 设计分辨率（横屏） */
 export const DESIGN_W = 1334;
 export const DESIGN_H = 750;
 
-/** 三条车道的 x 坐标（横屏等分） */
-export const LANES = [320, 667, 1014];
-
-/** 玩家脚底基准线 y */
-export const GROUND_Y = 560;
-
-/** 场景滚动速度（像素/秒），开局与上限 */
-export const SPEED_START = 340;
-export const SPEED_MAX = 720;
-export const SPEED_STEP = 6;
-
-/** 圆润森林风调色板 */
-export const PALETTE = {
-  skyTop: 0x8fd3f0,
-  skyBottom: 0xd8f0c2,
-  hillFar: 0xa8d48e,
-  hillNear: 0x7cbf6b,
-  treeDark: 0x3f7d3a,
-  treeLight: 0x5da54b,
-  trunk: 0x8a5a33,
-  ground: 0xd9a35f,
-  groundDark: 0xb9823f,
-  laneLine: 0xe8c58a,
-  bearFur: 0x9c6b3f,
-  bearBelly: 0xe8cfa8,
-  bearDark: 0x6f4a28,
-  boxWood: 0xc98d4b,
-  boxLine: 0x8a5a33,
-  fence: 0xc9a06b,
-  gold: 0xffd34d,
-  goldEdge: 0xd9962e,
-  uiPanel: 0xfdf3dd,
-  uiPanelEdge: 0xc98d4b,
-  uiText: 0x5b3a1e,
-  uiBtn: 0xffb84d,
-  uiBtnEdge: 0xe08f2a,
-  magnet: 0xe05252,
-  shield: 0x4da3ff,
-  double: 0xb26ee0,
-  rocket: 0xff8c42,
-  heart: 0xff6b6b
+/** 透视投影参数 */
+export const PERSP = {
+  horizonY: 244,        // 地平线 y
+  baseY: 662,           // z=0 处玩家脚底 y
+  camDepth: 520,        // 透视深度常数：scale = camDepth / (z + camDepth)
+  roadHalf: 560,        // z=0 处路面半宽
+  laneUnit: 300,        // z=0 处相邻车道中心间距
+  zFar: 2400,           // 远处生成距离
+  zHit: 30,             // 碰撞判定 z 窗口
+  segLen: 120,          // 路面分段长度
+  heightUnit: 1         // 世界高度 → 屏幕像素
 };
 
-/** 道具持续时间（毫秒） */
+/** 三条车道的世界 x（-1/0/1） */
+export const LANES = [-1, 0, 1];
+
+/** 速度（世界 z 单位/秒），每 300m 递增一档，上限对齐源码 20 */
+export const SPEED_START = 620;
+export const SPEED_MAX = 1320;
+export const SPEED_STEP = 26;
+export const SPEED_ADD_DISTANCE = 300;
+export const SPEED_ADD_RATE = 46;
+
+/** 跳跃与滑铲 */
+export const JUMP_V = 900;
+export const GRAVITY = 2200;
+export const SLIDE_MS = 620;
+
+/** 道具持续时间（毫秒，对齐源码 Magnet 15s / Shoe 10s / Multiply 10s / Star 3s） */
 export const ITEM_DUR = {
-  magnet: 8000,
-  double: 8000,
-  rocket: 3200
+  magnet: 15000,
+  shoe: 10000,
+  x2: 10000,
+  star: 3200
+};
+
+/** 道具键与源码素材对应 */
+export const ITEM_KEYS = ['magnet', 'shoe', 'star', 'x2'];
+export const ITEM_NAMES = { magnet: '磁铁', shoe: '弹跳鞋', star: '星星冲刺', x2: '双倍金币' };
+
+/** 障碍物类型 */
+export const OBS = {
+  BUS: 'bus',        // 公交车：必须换道
+  CAR: 'car',        // 汽车：可跳过或换道
+  STONE: 'stone',    // 石墩：可跳过或换道
+  BOARD: 'board',    // 低梁：必须滑铲
+  GAP: 'gap'         // 断桥：必须跳跃
+};
+
+/** 夜景调色板（取自源码贴图与预览图） */
+export const PALETTE = {
+  skyTop: 0x0a1028,
+  skyBottom: 0x2a4670,
+  moon: 0xfff3c4,
+  buildingWall: 0x2a2b45,
+  buildingDark: 0x171a30,
+  windowLight: 0xffe79a,
+  lamp: 0xffd98a,
+  road: 0x3a3a4e,
+  roadDark: 0x181a27,
+  laneLine: 0xe8f1ff,
+  wood: 0x6b3d16,
+  woodDark: 0x3d210b,
+  woodEdge: 0xd8c9a8,
+  gold: 0xffd34d,
+  goldEdge: 0xd9962e,
+  uiText: 0xffffff,
+  hair: 0xf2f0e6,
+  coat: 0x8b4a24,
+  scarf: 0xffd24d,
+  pants: 0x2c4a8c,
+  shoeColor: 0x241d18
 };
 
 /** 角色动作枚举 */

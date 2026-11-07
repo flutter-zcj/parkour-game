@@ -1,51 +1,101 @@
 <style lang="scss" scoped>
-.parkour-page{position:relative;width:100%;height:100vh;background:#d8f0c2;overflow:hidden;box-sizing:border-box}
+/* UI 严格参考 3DMoonRunner 源码 Assets/GUI：破旧木板 + 撕裂灰白边框 + 金色文字 */
+.parkour-page{position:relative;width:100%;height:100vh;background:#0a1028;overflow:hidden;box-sizing:border-box}
 .parkour-page.rotate{position:fixed;top:0;left:100vw;width:100vh;height:100vw;transform:rotate(90deg);transform-origin:0 0;z-index:99}
 .parkour-canvas{position:absolute;inset:0}
-.parkour-tips{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:32rpx;color:#5b3a1e;background:rgba(253,243,221,.95);padding:24rpx 40rpx;border-radius:16rpx}
-.parkour-mask{position:absolute;inset:0;background:rgba(43,29,12,.55);display:flex;align-items:center;justify-content:center;z-index:30}
-.parkour-panel{position:relative;width:600rpx;background:#fdf3dd;border:8rpx solid #c98d4b;border-radius:24rpx;padding:40rpx;box-sizing:border-box;max-height:80vh;overflow-y:auto}
-.parkour-title{position:relative;text-align:center;font-size:40rpx;font-weight:700;color:#5b3a1e;margin-bottom:30rpx}
-.parkour-row{position:relative;display:flex;justify-content:space-between;margin-bottom:18rpx;font-size:30rpx;color:#7a5230}
-.parkour-row b{position:relative;color:#e08f2a}
-.parkour-btn{position:relative;display:block;width:100%;text-align:center;background:#ffb84d;border:4rpx solid #e08f2a;color:#5b3a1e;font-size:32rpx;font-weight:700;padding:20rpx 0;border-radius:40rpx;margin-top:24rpx}
-.parkour-btn.ghost{position:relative;background:#fdf3dd;border-color:#c98d4b}
-.parkour-btn:disabled{position:relative;opacity:.5}
-.parkour-boxlist{position:relative;display:flex;flex-wrap:wrap;gap:12rpx;margin-top:10rpx}
-.parkour-prize{position:relative;background:#fff;border:3rpx solid #c98d4b;border-radius:12rpx;padding:10rpx 18rpx;font-size:26rpx;color:#5b3a1e}
-.parkour-prize.legendary{position:relative;border-color:#e05252;color:#e05252}
-.parkour-prize.epic{position:relative;border-color:#b26ee0;color:#b26ee0}
-.parkour-rank{position:relative;margin-top:10rpx}
-.parkour-rankrow{position:relative;display:flex;justify-content:space-between;font-size:28rpx;color:#5b3a1e;padding:8rpx 0;border-bottom:1rpx dashed #d9c39a}
+.parkour-tips{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:26px;color:#ffe6a8;background:rgba(20,16,10,.9);border:3px solid #d8c9a8;padding:14px 30px;border-radius:6px;z-index:60}
+.parkour-mask{position:absolute;inset:0;background:rgba(6,8,20,.74);display:flex;align-items:center;justify-content:center;z-index:50}
+.parkour-ready{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:52}
+.parkour-readybg{position:absolute;inset:0;background-size:cover;background-position:center;filter:brightness(.62)}
+.parkour-readycover{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,10,26,.45),rgba(8,10,26,.8))}
+.parkour-panel{position:relative;width:560px;max-height:96vh;overflow-y:auto;box-sizing:border-box;background:#5c3414;border:7px solid #cfc2a6;border-radius:8px;padding:10px 20px 12px;box-shadow:0 0 0 4px #3d210b,0 14px 50px rgba(0,0,0,.7);animation:slideIn .45s ease-out}
+.parkour-panel::after{position:absolute;content:'';inset:6px;border:2px solid rgba(60,32,10,.55);pointer-events:none}
+.parkour-panel.menu{position:relative;width:480px}
+.parkour-title{position:relative;text-align:center;font-size:28px;font-weight:800;color:#ffdf8c;letter-spacing:4px;text-shadow:0 2px 0 #3d210b,0 0 14px rgba(255,200,90,.5);margin:0 0 6px}
+.parkour-subtitle{position:relative;text-align:center;font-size:15px;color:#f3e2c0;margin:-4px 0 8px;letter-spacing:2px}
+.parkour-row{position:relative;display:flex;justify-content:space-between;font-size:16px;color:#f3e2c0;padding:2px 6px;border-bottom:1px dashed rgba(255,225,170,.28)}
+.parkour-row b{position:relative;color:#ffd34d;font-size:18px}
+.parkour-stats{position:relative;display:grid;grid-template-columns:1fr 1fr;column-gap:14px}
+.parkour-btnrow{position:relative;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px}
+.parkour-btn{position:relative;width:170px;height:96px;background-size:100% 100%;background-repeat:no-repeat;border:0;border-radius:0;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#ffe6a8;letter-spacing:2px;text-shadow:0 2px 4px #2a1608;transition:transform .12s ease}
+.parkour-btn:active{position:relative;transform:scale(.94)}
+.parkour-btn.small{position:relative;width:132px;height:74px;font-size:16px}
+.parkour-btn.menu-play{position:relative;width:190px;height:107px}
+.parkour-btn.dim{position:relative;opacity:.45;pointer-events:none}
+.parkour-best{position:relative;text-align:center;font-size:16px;color:#ffe6a8;margin:4px 0}
+.parkour-boxlist{position:relative;display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.parkour-prize{position:relative;background:rgba(255,243,221,.92);border:2px solid #c98d4b;border-radius:6px;padding:5px 10px;font-size:15px;color:#5b3a1e}
+.parkour-prize.legendary{position:relative;border-color:#e05252;color:#b02a2a}
+.parkour-prize.epic{position:relative;border-color:#b26ee0;color:#7b3fa8}
+.parkour-rank{position:relative;margin:6px 0;max-height:150px;overflow-y:auto}
+.parkour-rankrow{position:relative;display:flex;justify-content:space-between;font-size:16px;color:#f3e2c0;padding:4px 4px;border-bottom:1px dashed rgba(255,225,170,.28)}
+@keyframes slideIn{from{transform:translateX(-110%);opacity:0}to{transform:translateX(0);opacity:1}}
 </style>
 <template>
   <view class="parkour-page" :class="{ rotate: isPortrait }">
     <view id="parkour-canvas" class="parkour-canvas"></view>
     <view v-if="tips" class="parkour-tips">{{ tips }}</view>
-    <view v-if="overlay === 'pause'" class="parkour-mask">
-      <view class="parkour-panel">
-        <view class="parkour-title">本局已暂停</view>
-        <view class="parkour-row"><span>当前得分</span><b>{{ run.score }}</b></view>
-        <view class="parkour-row"><span>当前金币</span><b>{{ run.coins }}</b></view>
-        <button class="parkour-btn" @click="resumeGame">继续</button>
-        <button class="parkour-btn ghost" @click="quitGame">退出本局</button>
+
+    <!-- 主菜单：官方宣传图 + 原版 PLAY 木板按钮（对齐源码 PlayUI） -->
+    <view v-if="overlay === 'ready'" class="parkour-ready">
+      <view class="parkour-readybg" :style="{ backgroundImage: 'url(' + assetBase + 'bg/logo.jpg)' }"></view>
+      <view class="parkour-readycover"></view>
+      <view class="parkour-panel menu">
+        <view class="parkour-title">月光跑酷</view>
+        <view class="parkour-subtitle">3D MOON RUNNER</view>
+        <view class="parkour-best">历史最高 {{ player.best_score || 0 }} 分 · 金币 {{ player.coins || 0 }}</view>
+        <view class="parkour-btnrow">
+          <view class="parkour-btn menu-play" :style="btnStyle('b-play')" @click="startGame"></view>
+        </view>
+        <view class="parkour-btnrow">
+          <view class="parkour-btn small" :style="btnStyle('b-blank')" @click="openRank">排行榜</view>
+          <view class="parkour-btn small" :style="btnStyle('b-blank')" @click="openBoxPanel">盲盒抽奖</view>
+        </view>
       </view>
     </view>
+
+    <!-- 暂停面板（对齐源码 ResumeUI） -->
+    <view v-if="overlay === 'pause'" class="parkour-mask">
+      <view class="parkour-panel">
+        <view class="parkour-title">暂停</view>
+        <view class="parkour-row"><span>当前得分</span><b>{{ run.score }}</b></view>
+        <view class="parkour-row"><span>当前金币</span><b>{{ run.coins }}</b></view>
+        <view class="parkour-row"><span>奔跑距离</span><b>{{ run.distance }} m</b></view>
+        <view class="parkour-btnrow">
+          <view class="parkour-btn" :style="btnStyle('b-resume')" @click="resumeGame"></view>
+          <view class="parkour-btn" :style="btnStyle('b-restart')" @click="startGame"></view>
+        </view>
+        <view class="parkour-btnrow">
+          <view class="parkour-btn small" :style="btnStyle('b-exit')" @click="toReady"></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 结算面板（对齐源码 RestartUI） -->
     <view v-if="overlay === 'over'" class="parkour-mask">
       <view class="parkour-panel">
         <view class="parkour-title">{{ over.rank === 1 ? '新纪录！' : '本局结束' }}</view>
-        <view class="parkour-row"><span>得分</span><b>{{ over.score }}</b></view>
-        <view class="parkour-row"><span>距离</span><b>{{ over.distance }} m</b></view>
-        <view class="parkour-row"><span>金币</span><b>+{{ over.coins }}</b></view>
-        <view class="parkour-row"><span>历史最高</span><b>{{ over.best }}</b></view>
-        <view class="parkour-row"><span>金币余额</span><b>{{ player.coins }}</b></view>
-        <view v-if="over.task_rewards && over.task_rewards.length" class="parkour-row"><span>任务奖励</span><b>{{ over.task_rewards.join('、') }}</b></view>
-        <button class="parkour-btn" :disabled="reviving || player.coins < 300" @click="doRevive">看广告复活（{{ player.coins }} / 300 金币）</button>
-        <button class="parkour-btn ghost" @click="startGame">再来一局</button>
-        <button class="parkour-btn ghost" @click="openBoxPanel">盲盒抽奖（{{ player.diamonds }} 钻石）</button>
-        <button class="parkour-btn ghost" @click="openRank">排行榜</button>
+        <view class="parkour-stats">
+          <view class="parkour-row"><span>得分</span><b>{{ over.score }}</b></view>
+          <view class="parkour-row"><span>距离</span><b>{{ over.distance }} m</b></view>
+          <view class="parkour-row"><span>金币</span><b>+{{ over.coins }}</b></view>
+          <view class="parkour-row"><span>历史最高</span><b>{{ over.best }}</b></view>
+          <view class="parkour-row"><span>金币余额</span><b>{{ player.coins }}</b></view>
+          <view v-if="over.task_rewards && over.task_rewards.length" class="parkour-row"><span>任务奖励</span><b>{{ over.task_rewards.join('、') }}</b></view>
+        </view>
+        <view class="parkour-btnrow">
+          <view class="parkour-btn" :class="{ dim: reviving || player.coins < 300 }" :style="btnStyle('b-blank')" @click="doRevive">复活 300 金币</view>
+          <view class="parkour-btn" :style="btnStyle('b-restart')" @click="startGame"></view>
+        </view>
+        <view class="parkour-btnrow">
+          <view class="parkour-btn small" :style="btnStyle('b-blank')" @click="openRank">排行榜</view>
+          <view class="parkour-btn small" :style="btnStyle('b-blank')" @click="openBoxPanel">盲盒抽奖</view>
+          <view class="parkour-btn small" :style="btnStyle('b-exit')" @click="toReady"></view>
+        </view>
       </view>
     </view>
+
+    <!-- 盲盒面板 -->
     <view v-if="overlay === 'box'" class="parkour-mask">
       <view class="parkour-panel">
         <view class="parkour-title">盲盒抽奖</view>
@@ -53,11 +103,17 @@
         <view class="parkour-boxlist">
           <view v-for="prize in boxResults" :key="prize.id" class="parkour-prize" :class="prize.rarity">{{ prize.name }}</view>
         </view>
-        <button class="parkour-btn" :disabled="drawing || player.diamonds < 20" @click="drawBox(1)">单抽（20 钻石）</button>
-        <button class="parkour-btn" :disabled="drawing || player.diamonds < 200" @click="drawBox(10)">十连（200 钻石）</button>
-        <button class="parkour-btn ghost" @click="closeBox">返回</button>
+        <view class="parkour-btnrow">
+          <view class="parkour-btn small" :class="{ dim: drawing || player.diamonds < 20 }" :style="btnStyle('b-blank')" @click="drawBox(1)">单抽 20 钻</view>
+          <view class="parkour-btn small" :class="{ dim: drawing || player.diamonds < 200 }" :style="btnStyle('b-blank')" @click="drawBox(10)">十连 200 钻</view>
+        </view>
+        <view class="parkour-btnrow">
+          <view class="parkour-btn small" :style="btnStyle('b-blank')" @click="closeBox">返回</view>
+        </view>
       </view>
     </view>
+
+    <!-- 排行榜面板 -->
     <view v-if="overlay === 'rank'" class="parkour-mask">
       <view class="parkour-panel">
         <view class="parkour-title">排行榜</view>
@@ -67,7 +123,9 @@
             <span>{{ idx + 1 }}. {{ item.nickname }}</span><b>{{ item.score }}</b>
           </view>
         </view>
-        <button class="parkour-btn ghost" @click="closeRank">返回</button>
+        <view class="parkour-btnrow">
+          <view class="parkour-btn small" :style="btnStyle('b-blank')" @click="closeRank">返回</view>
+        </view>
       </view>
     </view>
   </view>
@@ -75,13 +133,14 @@
 <script>
 /**
  * 组件名称：parkour
- * 功能说明：跑酷游戏页，Phaser 场景生命周期、WebSocket 长连接、结算/复活/盲盒/排行榜弹窗
+ * 功能说明：月光跑酷游戏页（UI 严格参考 3DMoonRunner 源码 Assets/GUI），
+ *           Phaser 场景生命周期、WebSocket 长连接、主菜单/暂停/结算/盲盒/排行榜弹窗、横屏强制显示
  * 研发时间：2026/11/04
  * 研发人员：郑朝军
  *
  * 变量说明：
  * @data {String}  tips        - 连接提示文案
- * @data {String}  overlay     - 当前弹窗：pause/over/box/rank
+ * @data {String}  overlay     - 当前弹窗：ready/pause/over/box/rank/空
  * @data {Object}  run         - 局内暂停数据
  * @data {Object}  over        - 结算面板数据
  * @data {Object}  player      - 玩家档案（金币/钻石/最高分）
@@ -89,24 +148,28 @@
  * @data {Object}  rank        - 排行榜数据
  * @data {Boolean} reviving    - 是否正在复活
  * @data {Boolean} drawing     - 是否正在抽卡
+ * @data {String}  returnOverlay - 关闭盲盒/排行榜后返回的界面（ready/over）
+ * @data {Boolean} isPortrait  - 设备是否处于竖屏（竖屏时页面旋转 90° 强制横屏显示）
+ * @data {Number}  fitTimer    - 等待 Phaser canvas 就绪的轮询定时器 ID
  * @data {Object}  net         - 网络客户端
  * @data {Object}  audio       - 音频管理器
  * @data {Object}  game        - Phaser.Game 实例
  * @data {Object}  scene       - 当前场景实例
- * @data {Boolean} isPortrait  - 设备是否处于竖屏（竖屏时页面旋转 90° 强制横屏显示）
- * @data {Number}  fitTimer    - 等待 Phaser canvas 就绪的轮询定时器 ID
  *
  * 事件说明：
  * @event boot            - 初始化 Phaser 与网络
  * @event disablePcAdapt  - 解除 PC 适配模拟器，保证游戏全屏直跑
  * @event updateOrientation - 检测横竖屏并切换旋转兜底
  * @event lockLandscape   - 尝试全屏 + 原生横屏锁定
+ * @event fitCanvas       - 按容器布局尺寸缩放居中画布
+ * @event assetBase       - 计算源码 UI 素材基址
+ * @event btnStyle        - 生成原版木板按钮背景样式
  * @event connect         - 建立 WebSocket 并注册指令处理
  * @event resolveUrl      - 计算 WebSocket 地址
  * @event bindSceneActions- 注入音频回调
  * @event startGame       - 开始新的一局
  * @event resumeGame      - 恢复暂停的局
- * @event quitGame        - 退出当前局
+ * @event toReady         - 返回主菜单
  * @event pauseGame       - 暂停弹窗
  * @event handleGameOver  - 结算上报并弹面板
  * @event doRevive        - 看广告复活
@@ -119,7 +182,7 @@
  *
  * 插槽说明：无
  *
- * 修改时间：2026/11/05（横屏模式：CSS 旋转兜底 + 原生方向锁定）
+ * 修改时间：2026/11/05（基于 3DMoonRunner 源码重做 UI 与伪 3D 场景）
  */
 import ParkourNet from './parkour-net.js';
 import ParkourAudio from './parkour-audio.js';
@@ -131,13 +194,14 @@ export default {
     return {
       tips: '正在连接服务器…',
       overlay: '',
-      run: { score: 0, coins: 0 },
+      run: { score: 0, coins: 0, distance: 0 },
       over: { score: 0, distance: 0, coins: 0, best: 0, rank: 0, task_rewards: [] },
       player: { coins: 0, diamonds: 0, best_score: 0 },
       boxResults: [],
       rank: { top: [], my_rank: 0, my_score: 0 },
       reviving: false,
       drawing: false,
+      returnOverlay: 'ready',
       isPortrait: false,
       fitTimer: null,
       net: null,
@@ -145,6 +209,20 @@ export default {
       game: null,
       scene: null
     };
+  },
+
+  computed: {
+    /**
+     * 源码 UI 素材基址（兼容 hash 路由与子路径部署）
+     * @returns {string} 素材目录绝对 URL
+     */
+    assetBase() {
+      if (typeof window === 'undefined') {
+        return 'static/game/parkour/moon/';
+      }
+      const href = window.location.href.split('#')[0];
+      return href.substring(0, href.lastIndexOf('/') + 1) + 'static/game/parkour/moon/';
+    }
   },
 
   mounted() {
@@ -168,8 +246,7 @@ export default {
 
   methods: {
     /**
-     * 解除模板的 PC 适配（宽屏时 adapt-pc 会把应用藏进 iframe 手机模拟器，
-     * 横屏游戏页必须全屏直跑，故移除适配标记并隐藏模拟器容器）
+     * 解除模板的 PC 适配（宽屏时 adapt-pc 会把应用藏进 iframe 手机模拟器）
      * @returns {void}
      */
     disablePcAdapt() {
@@ -196,7 +273,6 @@ export default {
         return;
       }
       this.isPortrait = window.innerHeight > window.innerWidth;
-      // 等 rotate 类渲染生效后再重算画布缩放
       this.$nextTick(() => {
         window.requestAnimationFrame(() => this.fitCanvas());
       });
@@ -232,6 +308,7 @@ export default {
         // 全屏或方向锁定不可用时忽略，CSS 旋转兜底
       }
     },
+
     /**
      * 初始化 Phaser 与网络
      * @returns {void}
@@ -244,26 +321,27 @@ export default {
       }
       this.$nextTick(() => {
         const SceneClass = createParkourScene(Phaser, {
+          assetBase: this.assetBase,
           onReady: (scene) => {
             this.scene = scene;
             this.bindSceneActions();
           },
           onGameOver: (result) => this.handleGameOver(result),
-          onPause: () => this.pauseGame()
+          onPause: (stats) => this.pauseGame(stats),
+          onSoundToggle: (enabled) => this.audio.setEnabled(enabled)
         });
         this.game = new Phaser.Game({
           type: Phaser.AUTO,
           parent: 'parkour-canvas',
           width: DESIGN_W,
           height: DESIGN_H,
-          backgroundColor: '#d8f0c2',
-          // 竖屏时父容器带 rotate 变换，FIT 量到的 bbox 与布局不符，
-          // 改为手动按 offsetWidth/offsetHeight 计算缩放（见 fitCanvas）
+          backgroundColor: '#0a1028',
+          // 竖屏时父容器带 rotate 变换，FIT 量到的 bbox 与布局不符，改为手动缩放
           scale: { mode: Phaser.Scale.NONE },
           scene: [SceneClass]
         });
         this.$nextTick(() => {
-          // Phaser.Game 异步 boot，canvas 就绪前先轮询，就绪后立即适配一次
+          // Phaser.Game 异步 boot，canvas 就绪前先轮询
           this.fitTimer = setInterval(() => {
             if (this.game && this.game.canvas) {
               this.fitCanvas();
@@ -301,6 +379,15 @@ export default {
     },
 
     /**
+     * 生成原版木板按钮背景样式
+     * @param {string} name 素材名（不含扩展名）
+     * @returns {Object} 行内样式
+     */
+    btnStyle(name) {
+      return { backgroundImage: 'url(' + this.assetBase + 'ui/' + name + '.png)' };
+    },
+
+    /**
      * 建立 WebSocket 并注册指令处理
      * @returns {void}
      */
@@ -313,9 +400,8 @@ export default {
         this.tips = '';
         this.audio.play('enter');
         this.audio.playBgm('bgm_menu');
-        if (this.scene && this.scene.state === 0) {
-          this.startGame();
-        }
+        // 对齐源码：登录后进入主菜单（PlayUI），点击 PLAY 才开局
+        this.overlay = 'ready';
       });
       net.on('run_end', (data) => {
         this.player.coins = data.total_coins;
@@ -350,7 +436,7 @@ export default {
     },
 
     /**
-     * 计算WebSocket 地址，生产环境走同域反代
+     * 计算 WebSocket 地址，生产环境走同域反代
      * @returns {string} ws 地址
      */
     resolveUrl() {
@@ -367,12 +453,13 @@ export default {
         jump: () => this.audio.play('jump'),
         slide: () => this.audio.play('slide'),
         lane: () => this.audio.play('lane', 0.6),
-        coin: () => this.audio.play(Math.random() < 0.5 ? 'coin' : 'coin2', 0.7),
-        crash: (hasShield) => this.audio.play(hasShield ? 'click' : 'crash'),
+        coin: () => this.audio.play('coin', 0.7),
+        item: () => this.audio.play('reward'),
+        crash: () => this.audio.play('crash'),
         death: () => this.audio.play('death'),
         revive: () => this.audio.play('revive'),
-        reward: () => this.audio.play('reward'),
-        fast: () => this.audio.play('fast')
+        levelup: () => this.audio.play('levelup'),
+        click: () => this.audio.play('click')
       });
     },
 
@@ -385,7 +472,6 @@ export default {
       this.lockLandscape();
       this.audio.play('click');
       this.audio.playBgm('bgm_run');
-      this.audio.playAmbience(true);
       this.scene.startRun();
     },
 
@@ -400,25 +486,23 @@ export default {
     },
 
     /**
-     * 退出当前局回到待机
+     * 返回主菜单（对齐源码 Exit / RestartUI）
      * @returns {void}
      */
-    quitGame() {
-      this.overlay = '';
+    toReady() {
+      this.overlay = 'ready';
       this.audio.play('click');
       this.audio.playBgm('bgm_menu');
-      this.audio.playAmbience(false);
-      this.scene.resetRun();
-      this.scene.state = 0;
+      this.scene.toReady();
     },
 
     /**
-     * 局内暂停入口（HUD 按钮触发）
+     * 局内暂停入口（HUD 暂停按钮触发）
+     * @param {Object} stats 局内统计
      * @returns {void}
      */
-    pauseGame() {
-      this.run.score = this.scene.score;
-      this.run.coins = this.scene.coins;
+    pauseGame(stats) {
+      this.run = stats || { score: this.scene.score, coins: this.scene.coins, distance: Math.floor(this.scene.distance) };
       this.overlay = 'pause';
     },
 
@@ -429,7 +513,6 @@ export default {
      */
     handleGameOver(result) {
       this.audio.playBgm('bgm_menu');
-      this.audio.playAmbience(false);
       this.net.send('run_end', {
         token: this.net.token,
         score: result.score,
@@ -441,11 +524,11 @@ export default {
     },
 
     /**
-     * 看广告复活
+     * 复活（消耗 300 金币）
      * @returns {void}
      */
     doRevive() {
-      if (this.reviving) {
+      if (this.reviving || this.player.coins < 300) {
         return;
       }
       this.reviving = true;
@@ -458,6 +541,7 @@ export default {
      * @returns {void}
      */
     openBoxPanel() {
+      this.returnOverlay = this.overlay === 'ready' ? 'ready' : 'over';
       this.boxResults = [];
       this.overlay = 'box';
       this.audio.play('click');
@@ -478,11 +562,11 @@ export default {
     },
 
     /**
-     * 关闭盲盒面板
+     * 关闭盲盒面板，回到来源界面
      * @returns {void}
      */
     closeBox() {
-      this.overlay = 'over';
+      this.overlay = this.returnOverlay;
       this.audio.play('click');
     },
 
@@ -491,6 +575,7 @@ export default {
      * @returns {void}
      */
     openRank() {
+      this.returnOverlay = this.overlay === 'ready' ? 'ready' : 'over';
       this.audio.play('click');
       this.net.send('rank_list', { token: this.net.token });
       this.overlay = 'rank';
@@ -501,7 +586,7 @@ export default {
      * @returns {void}
      */
     closeRank() {
-      this.overlay = 'over';
+      this.overlay = this.returnOverlay;
       this.audio.play('click');
     },
 

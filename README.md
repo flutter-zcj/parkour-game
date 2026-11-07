@@ -49,11 +49,14 @@ cd web && npm install && npm run build:h5   # 产物 dist/build/h5
 
 服务器上已有 ddz / guandan / mahjong 三个 cherry 前辈实例，本服务按同规范落位，端口顺延至 9108。
 
-## 素材合规
+## 素材来源（基于 3DMoonRunner 重做，2026/11/05）
 
-- 音频：从原作 APK 提取的 22 条 ogg（BGM《lost temple》37s 循环、跳跃/滑铲/金币/爆炸等），仅用于学习研究，**禁止商用**。
-- 美术：全部 Canvas 程序化绘制（圆润森林风：木框 + 藤蔓绿 + 金色描边），不含原作任何角色形象。
-- 角色：原创 Q 版小熊；角色名（森林游侠/疾风忍者/雪原使者等）为合规替换命名。
+参考源码：[XINCGer/3DMoonRunner](https://github.com/XINCGer/3DMoonRunner)（Unity「月光跑酷3D版」），仅用于学习研究，**禁止商用**。
+
+- **UI（严格参考）**：直接复用源码 `Assets/GUI` 的 13 张原版 PNG —— 破旧木板质感 PLAY / RESUME / RESTART / EXIT / PAUSE 按钮、4 个霓虹道具按钮、金色 B 币、深灰分数条、音效开关；派生 `b-blank.png` 承载中文按钮。布局对齐 `Previews/` 与 `logo.png`：左上金币条、右上竖排 4 道具、左下暂停、右下音效。
+- **场景**：星空天空盒 `SKYBOX_StarryNight/07/Front.bmp`、石板路 `Model/Floor/Texture/Road.jpg`、夜景建筑 `Model/Building/Texture/*.jpg`（亮度增强）用于伪 3D 透视街道；角色（白发 + 棕外套 + 黄围巾）与公交车/汽车/石墩/木板/断桥为程序化绘制，配色对齐源码贴图与预览图。
+- **音效**：`Assets/Audio` 的 button / coin / getitem / hit / slide 转 ogg 覆盖 click / coin / reward / crash / slide；BGM 沿用既有 bgm_menu / bgm_run。
+- **玩法机制对齐源码 `Assets/Script`**：第三人称三车道、手势换道、二段跳、滑铲、每 300m 递增速度、磁铁 15s / 弹跳鞋 10s / ×2 金币 10s / 星星冲刺 3s、金币连击、撞击相机抖动、PlayUI / ResumeUI / RestartUI 左侧滑入面板。
 
 ## 目录
 

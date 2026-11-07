@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>森林大冒险 · 本地预览</title>
+  <title>月光跑酷 · 本地预览</title>
   <script src="./game/phaser.min.js"></script>
   <style>
-    html,body{margin:0;height:100%;background:#1d2b18;display:flex;align-items:center;justify-content:center}
+    html,body{margin:0;height:100%;background:#080c1c;display:flex;align-items:center;justify-content:center}
     #parkour-canvas{width:667px;height:375px}
   </style>
 </head>
@@ -15,14 +15,14 @@
   <script type="module">
     import createParkourScene from '/pages/game/parkour/parkour-game.js';
     const SceneClass = createParkourScene(window.Phaser, {
+      assetBase: '/static/game/parkour/moon/',
       onReady: (scene) => {
         window.__scene = scene;
-        setTimeout(() => scene.startRun(), 600);
+        setTimeout(() => scene.startRun(), 800);
       },
       onGameOver: (result) => {
         document.title = 'GAMEOVER ' + result.score + 'pts ' + result.coins + 'coins ' + result.distance + 'm';
         window.__over = result;
-        setTimeout(() => { window.__scene.revive(); setTimeout(() => window.__scene.gameOver(), 1500); }, 400);
       }
     });
     const game = new Phaser.Game({
@@ -30,7 +30,7 @@
       parent: 'parkour-canvas',
       width: 1334,
       height: 750,
-      backgroundColor: '#d8f0c2',
+      backgroundColor: '#0a1028',
       scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
       scene: [SceneClass]
     });
